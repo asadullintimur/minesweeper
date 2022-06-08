@@ -4,26 +4,30 @@
 
     <playing-field>
     </playing-field>
-
   </section>
 </template>
 
 <script>
 import PlayingField from "@/components/PlayingField";
+import {mapActions} from "vuex";
 export default {
   name: "MainComponent",
 
   components: {
     PlayingField
+  },
+
+  methods: {
+    ...mapActions("field", ["initCells"])
+  },
+
+  created() {
+    this.initCells(6)
   }
 }
 </script>
 
 <style scoped>
-
-/*
-main
- */
 .main {
   padding: 60px 0;
 }

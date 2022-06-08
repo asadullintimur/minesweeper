@@ -1,8 +1,12 @@
 <template>
   <div class="cell"
-       @click="openCell(idx)">
+       :class="{
+          opened: cell.opened,
+          flagged: cell.flagged,
+       }"
+       @click="openCell(cell)">
     <span v-if="!isCellEmpty">
-      {{ content }}
+      {{ cell.minAround }}
     </span>
   </div>
 </template>
@@ -15,24 +19,15 @@ export default {
   name: "FieldCell",
 
   props: {
-    content: {
-      type: [Number, String],
-      required: true
-    },
-
-    idx: {
-      type: Number,
+    cell: {
       required: true,
+      type: Object,
     }
-  },
-
-  data() {
-    return {}
   },
 
   computed: {
     isCellEmpty() {
-      return this.content === 0;
+      return this.cell.minAround === 0 && !this.cell.isMine
     },
   },
 
@@ -52,7 +47,6 @@ export default {
   border: 1px solid rgba(0, 0, 0, 0.1);
   width: 30px;
   height: 30px;
-  font-size: 0;
   cursor: pointer;
   transition: border 0.1s linear;
 }
@@ -61,16 +55,18 @@ export default {
   border: 1px solid rgba(0, 0, 0, 0.8);
 }
 
+/*opened*/
 .cell.opened {
   background-color: rgba(0, 0, 0, 0.1);
   font-size: 1rem;
 }
 
-.cell.flag {
+/*flagged*/
+.cell.flagged {
   position: relative;
 }
 
-.cell.flag:after {
+.cell.flagged:after {
   content: "";
   position: absolute;
   top: 0;
@@ -80,5 +76,4 @@ export default {
   height: 100%;
   background: url("/public/assets/img/icons/red-flag.svg") center/70% no-repeat;
 }
-
 </style>

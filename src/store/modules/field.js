@@ -1,15 +1,9 @@
-import {FIELD_CELL, FIELD_MODE} from "@/helpers/constants";
+import {FIELD_MODE} from "@/helpers/constants";
 import options from "@/store/modules/options";
 
 //state
 const state = () => ({
-    cells: [1, 1, 1, 0, 0,
-        1, "*", 1, 0, 0,
-        1, 1, 1, 0, 0,
-        0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0],
-    openedCells: [],
-    flagCells: [],
+    cells: [],
 })
 
 //getters
@@ -17,45 +11,78 @@ const getters = {}
 
 //mutations
 const mutations = {
-    openCell(state, idx) {
-        state.openedCells.push(idx)
+    openCell(state, cell) {
+        cell.opened = true;
     },
 
-    flagCell(state, idx) {
-        state.flagCells.push(idx)
+    toggleFlag(state, cell) {
+        cell.flagged = !cell.flagged;
     },
 
-    removeFlag(state, idx) {
-        state.flagCells = state.flagCells.filter((cellIdx) => cellIdx !== idx)
-    }
+    setCells(state, cells) {
+        state.cells = cells;
+    },
+
+    // setMinIndices(state, minIndices) {
+    //     state.cells.minIndices = minIndices;
+    // }
 }
 
 //actions
 const actions = {
-    openCell({commit, state, dispatch, rootState}, idx) {
+    openCell({commit, dispatch, rootState}, cell) {
         const optionsState = rootState.field.options;
-        let mode = optionsState.mode;
 
-        let cell = state.cells.find((cell, fIdx) => fIdx === idx);
-
-        if (cell === FIELD_CELL.MINE) {
-            console.log("lose")
-        }
-
-        if (mode === FIELD_MODE.OPEN) {
-            commit("openCell", idx)
+        if (optionsState.mode === FIELD_MODE.OPEN && !cell.flagged) {
+            commit("openCell", cell)
         } else {
-            dispatch("flagCell", idx)
+            dispatch("flagCell", cell)
         }
     },
 
-    flagCell({commit, state}, idx) {
-        if (state.flagCells.includes(idx)) {
-            commit("removeFlag", idx)
-        } else {
-            commit("flagCell", idx)
+    flagCell({commit, state, rootState}, cell) {
+        const optionsState = rootState.field.options;
+
+        if (!cell.opened && optionsState.mode === FIELD_MODE.FLAG) {
+            commit("toggleFlag", cell)
         }
-    }
+    },
+
+    initCells({state, dispatch, commit}, size) {
+        let numberOfCells = size ** 2;
+        let cells = [];
+
+        for (let i = 0; i < numberOfCells; i++) {
+            let cell = {
+                id: i,
+                minAround: 0,
+                opened: false,
+                flagged: false,
+                isMine: false,
+            };
+            cells.push(cell)
+        }
+
+        commit("setCells", cells)
+
+        // state.minIndices.forEach(minIdx => {
+        //     cells[minIdx] = FIELD_CELL.MINE;
+        // })
+    },
+
+    initMines() {},
+
+
+    // initMinIndices({state, commit}, {numberOfMines, numberOfCells}) {
+    //     let minIndices = [];
+    //
+    //     while (minIndices.length !== numberOfMines) {
+    //         let minIdx = Math.round(Math.random() * numberOfCells);
+    //         if (!minIndices.includes(minIdx)) minIndices.push(minIdx)
+    //     }
+    //
+    //     commit("setMinIndices", minIndices)
+    // }
 }
 
 export default {
