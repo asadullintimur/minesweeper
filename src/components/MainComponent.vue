@@ -18,11 +18,11 @@ export default {
   },
 
   methods: {
-    ...mapActions("field", ["initCells"])
+    ...mapActions("field", ["initCells", "setParams"])
   },
 
   created() {
-    this.initCells(6)
+    this.initCells()
   }
 }
 </script>

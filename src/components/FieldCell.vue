@@ -1,18 +1,26 @@
 <template>
   <div class="cell"
+       :data-id="cell.id"
        :class="{
           opened: cell.opened,
-          flagged: cell.flagged,
+          flagged: cell.flagged
        }"
        @click="openCell(cell)">
-    <span v-if="!isCellEmpty">
-      {{ cell.minAround }}
-    </span>
+
+    <template v-if="cell.opened">
+        <span v-if="cell.minAround && !cell.isMine">
+          {{ cell.minAround }}
+        </span>
+
+      <span v-if="cell.isMine">
+        *
+      </span>
+    </template>
+
   </div>
 </template>
 
 <script>
-
 import {mapActions} from "vuex";
 
 export default {
@@ -25,15 +33,9 @@ export default {
     }
   },
 
-  computed: {
-    isCellEmpty() {
-      return this.cell.minAround === 0 && !this.cell.isMine
-    },
-  },
-
   methods: {
     ...mapActions("field", [
-        "openCell"
+      "openCell"
     ]),
   }
 }
@@ -57,7 +59,7 @@ export default {
 
 /*opened*/
 .cell.opened {
-  background-color: rgba(0, 0, 0, 0.1);
+  background-color: rgba(0, 0, 0, 0.2);
   font-size: 1rem;
 }
 

@@ -1,9 +1,10 @@
 <template>
   <div class="field">
-    <div class="cells">
+    <div class="cells"
+         @click.capture.once="startGame">
       <field-cell
-          v-for="(cell, idx) in cells"
-          :key="idx"
+          v-for="cell in cells"
+          :key="cell.id"
           :cell="cell">
       </field-cell>
     </div>
@@ -16,7 +17,7 @@
 <script>
 import FieldCell from "@/components/FieldCell"
 import FieldOptions from "@/components/FieldOptions"
-import {mapState} from "vuex"
+import {mapActions, mapState} from "vuex"
 
 export default {
   name: "PlayingField",
@@ -29,13 +30,25 @@ export default {
   computed: {
     ...mapState("field", {
       cells: state => state.cells,
+      size: state => state.params.size
     }),
   },
+
+  methods: {
+    ...mapActions("field", ["initMines"]),
+
+    startGame({target: cellDiv}) {
+      let cellId = cellDiv.dataset.id;
+
+      if (cellId) {
+        this.initMines(+cellId)
+      }
+    }
+  }
 }
 </script>
 
 <style scoped>
-
 .field {
   display: flex;
   justify-content: center;
@@ -43,7 +56,7 @@ export default {
 
 .cells {
   display: inline-grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(v-bind(size), 1fr);
   border: 2px solid rgba(0, 0, 0, 0.3);
   margin: 0 auto;
 }
