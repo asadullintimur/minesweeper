@@ -1,4 +1,4 @@
-import {FIELD_MODE, GAME_DIFFICULTY} from "@/helpers/constants";
+import {FIELD_MODE, GAME_DIFFICULTY, GAME_STATUS} from "@/helpers/constants";
 import {getAroundItems} from "@/helpers/getNearbyItems";
 
 //state
@@ -6,10 +6,12 @@ const state = () => ({
     cells: [],
     params: {
         numberOfMines: 10,
-        size: 9,
+        size: 9
     },
     mode: FIELD_MODE.OPEN,
-    difficulty: GAME_DIFFICULTY.EASY
+    difficulty: GAME_DIFFICULTY.EASY,
+    status: GAME_STATUS.NOT_INIT,
+
 })
 
 //getters
@@ -20,11 +22,31 @@ const getters = {
 
     cellIndices(state) {
         return state.cells.map((cell) => cell.id)
+    },
+
+    flaggedCells(state) {
+        return state.cells.filter(cell => cell.flagged)
+    },
+
+    openedCells(state) {
+        return state.cells.filter(cell => cell.opened)
+    },
+
+    flagCount(state, getters) {
+        return state.params.numberOfMines - getters.flaggedCells.length;
+    },
+
+    isGameWon(state, getters) {
+        return getters.openedCells.length === (state.cells.length - state.params.numberOfMines);
     }
 }
 
 //mutations
 const mutations = {
+    setParams(state, params) {
+        state.params = params;
+    },
+
     openCell(state, cell) {
         cell.opened = true;
     },
@@ -45,51 +67,50 @@ const mutations = {
         state.cells = cells;
     },
 
-    setMode(state, mode) {
-        state.mode = mode;
+    toggleMode(state) {
+        state.mode = state.mode === FIELD_MODE.OPEN ? FIELD_MODE.FLAG : FIELD_MODE.OPEN;
     },
 
     setDifficulty(state, difficulty) {
         state.difficulty = difficulty;
+    },
+
+    setStatus(state, status) {
+        state.status = status;
     }
 }
 
 //actions
 const actions = {
-    openCell({state, commit, dispatch}, cell) {
-        if (state.mode === FIELD_MODE.OPEN && !cell.flagged) {
-            commit("openCell", cell)
+    //NOT_INIT
+    setDifficulty({commit, dispatch}, difficulty) {
+        commit("setDifficulty", difficulty)
+        dispatch("init")
+    },
 
-            if (cell.minAround === 0) {
-                dispatch("openEmptyArea", cell)
-            }
-        } else {
-            dispatch("flagCell", cell)
+    setParams({state, commit}) {
+        switch (state.difficulty) {
+            case GAME_DIFFICULTY.EASY:
+                commit("setParams", {
+                    numberOfMines: 10,
+                    size: 9
+                })
+                break;
+            case GAME_DIFFICULTY.NORMAL:
+                commit("setParams", {
+                    size: 16,
+                    numberOfMines: 40,
+                })
+                break;
+            case GAME_DIFFICULTY.HARD:
+                commit("setParams", {
+                    size: 21,
+                    numberOfMines: 99
+                })
         }
     },
 
-    openEmptyArea({state, dispatch, commit}, cell) {
-        let aroundCells = getAroundItems(state.cells, cell.id)
-
-        aroundCells.forEach(cell => {
-            if (cell.minAround === 0 && !cell.opened) {
-                commit("openCell", cell)
-                dispatch("openEmptyArea", cell)
-            }
-            commit("openCell", cell)
-        })
-
-    },
-
-    flagCell({commit, state, getters, rootState}, cell) {
-        if (!cell.opened && state.mode === FIELD_MODE.FLAG) {
-            commit("toggleFlag", cell)
-        }
-    },
-
-    initCells({commit, state, dispatch}) {
-        dispatch("setParams")
-
+    initCells({commit, state}) {
         let numberOfCells = state.params.size ** 2;
         let cells = [];
 
@@ -107,6 +128,13 @@ const actions = {
         commit("setCells", cells)
     },
 
+    init({dispatch, commit}) {
+        commit("setStatus", GAME_STATUS.INIT)
+        dispatch("setParams")
+        dispatch("initCells")
+    },
+
+    //INIT
     initMines({state, commit, dispatch, getters}, startingCellId) {
         let startingCells = [startingCellId,
             ...getAroundItems(getters.cellIndices, startingCellId)];
@@ -136,37 +164,64 @@ const actions = {
         })
     },
 
-    toggleMode({commit, state}) {
-        let mode = state.mode === FIELD_MODE.OPEN ? FIELD_MODE.FLAG : FIELD_MODE.OPEN;
-        commit("setMode", mode)
+    startGame({dispatch, commit}, cellId) {
+        commit("setStatus", GAME_STATUS.STARTED)
+        dispatch("initMines", cellId)
     },
 
-    setParams({state}) {
-        switch (state.difficulty) {
-            case GAME_DIFFICULTY.EASY:
-                state.params = {
-                    numberOfMines: 10,
-                    size: 9
-                }
-                break;
-            case GAME_DIFFICULTY.NORMAL:
-                state.params = {
-                    size: 16,
-                    numberOfMines: 40,
-                }
-                break;
-            case GAME_DIFFICULTY.HARD:
-                state.params = {
-                    size: 21,
-                    numberOfMines: 99
-                }
+    //STARTED
+    openCell({state, commit, dispatch, getters}, cell) {
+        if (!cell.flagged) {
+            commit("openCell", cell)
+
+            if (cell.isMine) {
+                dispatch("gameOver")
+            }
+
+            if (!cell.minAround) {
+                dispatch("openEmptyArea", cell)
+            }
+
+            if (getters.isGameWon) {
+                dispatch("gameWon")
+            }
         }
     },
 
-    setDifficulty({commit, dispatch}, difficulty) {
-        commit("setDifficulty", difficulty)
-        dispatch("initCells")
+    flagCell({commit, state, rootState}, cell) {
+        if (!cell.opened) {
+            commit("toggleFlag", cell)
+        }
     },
+
+    openEmptyArea({state, dispatch, commit}, cell) {
+        let aroundCells = getAroundItems(state.cells, cell.id)
+
+        aroundCells.forEach(cell => {
+            if (cell.minAround === 0 && !cell.opened) {
+                commit("openCell", cell)
+                dispatch("openEmptyArea", cell)
+            }
+            commit("openCell", cell)
+        })
+
+    },
+
+    //LOSING
+    gameOver({state, commit}) {
+        state.cells.forEach(cell => {
+            if (cell.isMine) {
+                commit("openCell", cell)
+            }
+        })
+
+        commit("setStatus", GAME_STATUS.LOSING)
+    },
+
+    //WIN
+    gameWon({commit}) {
+        commit("setStatus", GAME_STATUS.WIN)
+    }
 }
 
 export default {

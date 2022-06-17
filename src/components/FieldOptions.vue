@@ -8,6 +8,10 @@
       <img src="assets/img/icons/red-flag.svg" alt="flag">
     </button>
 
+    <div class="flag-counter">
+      {{flagCount}}
+    </div>
+
     <div class="game-difficulty">
       <label class="label">
         <span>Сложность игры:</span>
@@ -20,13 +24,20 @@
         </select>
       </label>
 
-      <button class="btn" @click="setDifficulty(difficulty)">Установить</button>
+      <button class="btn" @click="setDifficulty(difficulty)">
+        Установить
+      </button>
     </div>
+
+    <button class="icon-btn"
+    @click="init">
+      <img src="assets/img/icons/restart.svg" alt="restart">
+    </button>
   </div>
 </template>
 
 <script>
-import {mapState, mapActions} from "vuex"
+import {mapState, mapActions, mapMutations, mapGetters} from "vuex"
 import {FIELD_MODE, GAME_DIFFICULTY} from "@/helpers/constants";
 
 export default {
@@ -42,19 +53,21 @@ export default {
     ...mapState("field", {
       mode: state => state.mode
     }),
+    ...mapGetters("field", ["flagCount"]),
+
+
+    GAME_DIFFICULTY() {
+      return GAME_DIFFICULTY
+    },
 
     isModeFlag() {
       return this.mode === FIELD_MODE.FLAG
     },
-
-    GAME_DIFFICULTY() {
-      return GAME_DIFFICULTY
-    }
   },
 
-
   methods: {
-    ...mapActions("field", ["toggleMode", "setDifficulty"])
+    ...mapActions("field", ["setDifficulty", "init"]),
+    ...mapMutations("field", ["toggleMode"])
   }
 }
 </script>
@@ -62,12 +75,13 @@ export default {
 <style scoped>
 /* icon-btn */
 .icon-btn img {
-  width: 22px;
+  width: 24px;
+  display: block;
 }
 
 .icon-btn {
   border: 1px solid rgba(0, 0, 0, 0.3);
-  padding: 2px 4px;
+  padding: 6px;
   border-radius: 3px;
   cursor: pointer;
 }
@@ -87,11 +101,26 @@ export default {
   margin-top: 30px;
   align-items: center;
   gap: 20px;
+  flex-wrap: wrap;
 }
 
 .game-difficulty {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+/*flag-counter*/
+.flag-counter {
+  font-weight: 800;
+  font-size: 1.4rem;
+  color: red;
+  border: 2px solid rgba(0, 0, 0, 0.3);
+  height: 40px;
+  width: 45px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
 }
 </style>

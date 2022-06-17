@@ -10,6 +10,7 @@
 <script>
 import PlayingField from "@/components/PlayingField";
 import {mapActions} from "vuex";
+
 export default {
   name: "MainComponent",
 
@@ -18,18 +19,18 @@ export default {
   },
 
   methods: {
-    ...mapActions("field", ["initCells", "setParams"])
+    ...mapActions("field", ["init"])
   },
 
   created() {
-    this.initCells()
+    this.init()
   }
 }
 </script>
 
 <style scoped>
 .main {
-  padding: 60px 0;
+  padding: 60px 20px;
 }
 
 .logo {
